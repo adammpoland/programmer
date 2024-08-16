@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Usage: compile_and_run_cpp.sh <cpp_code_file> <output_binary>
+# Example: compile_and_run_cpp.sh example.cpp output_binary
+
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <query>"
+    exit 1
+fi
+
+query="$1"
+
+
+# Call the Python script with the C++ code and output binary name
+python3 /home/adam/pyscripts/CPPProgrammer/programmer.py "$query" 
