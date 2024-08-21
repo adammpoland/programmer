@@ -1,65 +1,59 @@
 import subprocess
-import os
 import sys
 import ollama
+import re
+
 modelSelected = "llama3.1"
 
-def compile_and_run_cpp(cpp_code): 
-    output_binary = "Binary"   
-    # Write the C++ code to a file
-    cpp_file = 'temp.cpp'
-    with open(cpp_file, 'w') as file:
-        file.write(cpp_code)
-    
-    # Compile the C++ code
-    compile_command = f'g++ {cpp_file} -o {output_binary}'
-    compile_process = subprocess.run(compile_command, shell=True, capture_output=True, text=True)
-    
-    if compile_process.returncode != 0:
-        print("Compilation failed:")
-        print(compile_process.stderr)
-        return
-    
-    print("Compilation successful")
-    
-    # Execute the binary
-    execute_command = f'./{output_binary}'
-    execute_process = subprocess.run(execute_command, shell=True, capture_output=True, text=True)
-    
-    if execute_process.returncode != 0:
-        print("Execution failed:")
-        print(execute_process.stderr)
-        return
-    
-    print("Execution output:")
-    print(execute_process.stdout)
+def remove_quotes_and_comments(code):
+    # Remove single and triple quotes and any following text (comments)
+    #pattern = r"(?:'''(?:.|\n)*?'''|\"\"\"(?:.|\n)*?\"\"\"|#.*?$|'(?:\\.|[^'])*'|\"(?:\\.|[^\"])*\")"
+    cleaned_code = re.sub(r'`', '', code)
 
+    return cleaned_code
 
-
-
-def LLMToCPP(userQuery):
+def run_bash(bash_code): 
     
+    bash_file = 'temp.sh'
+    with open(bash_file, 'w') as file:
+        file.write(bash_code)
+    
+    process = subprocess.Popen(["bash"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    stdout, stderr = process.communicate(input=bash_code)
+    print(stdout)
+    print(stderr)
+
+    # compile_command = f'{bash_code}'
+    # compile_process = subprocess.run(compile_command)
+    
+    # if compile_process.returncode != 0:
+    #     print(compile_process.stderr)
+    #     return
+    
+    # print("Compilation successful")
+
+def LLMToBash(userQuery):
     messages = [
         {
             'role': 'system',
-            'content': f'You are a C++ expert and generate responses in C++ that will be compiled by the gcc compiler. Please show only C++ code with no comments'
+            'content': 'You are a linux bash expert and generate responses in bash that will run on an Ubuntu system. No comments or additional commentary. Just plain bash'
         },
         {
             'role': 'user',
-            'content': f'{userQuery}'
+            'content': userQuery
         }
     ]
     response = ollama.chat(model=modelSelected, messages=messages)
     return response['message']['content']
 
-
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: compile_and_run_cpp.py <query>")
+        print("Usage: programmer <query>")
         sys.exit(1)
 
-    cpp_code = LLMToCPP(sys.argv[1])
-    compile_and_run_cpp(cpp_code)
-    
-    # Cleanup
-    os.remove('temp.cpp')
+    bash_code = LLMToBash(sys.argv[1])
+    #cpp_code=remove_quotes_and_comments(cpp_code)
+    #cleaned_text = re.sub(r"'''", "", cpp_code)
+
+    #print(cleaned_text)
+    run_bash(remove_quotes_and_comments(bash_code))
